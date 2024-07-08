@@ -1,20 +1,25 @@
-from aiogram import F
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 from app.database.queries import ORMUser
-from app.handlers.user_handlers.user import router
 from app.handlers.user_handlers.user_states import Reg
-from app.keyboards.user_keyboard import sex_keyboard, duration_of_const_train_keyboard
+from app.keyboards.user_keyboard import sex_keyboard, duration_of_const_train_keyboard, get_back_to_user_menu_keyboard
+
+
+router = Router(name='user_registration')
 
 
 # Запускает регистрацию, ловит tg_id, переключает FSM на имя
-@router.message(F.text == 'Начать регистрацию')
-async def reg_one(message: Message, state: FSMContext):
-    await state.set_state(Reg.tg_id)
-    await state.update_data(tg_id=message.from_user.id)
-    await state.set_state(Reg.name)
-    await message.answer('Напишите свое имя')
+@router.callback_query(F.data == 'user_registration')
+async def reg_one(callback: CallbackQuery, state: FSMContext):
+    if await ORMUser.is_user_registered(callback.from_user.id):
+        await callback.message.edit_text(f'Вы уже зарегистрированы', reply_markup=get_back_to_user_menu_keyboard)
+    else:
+        await state.set_state(Reg.tg_id)
+        await state.update_data(tg_id=callback.from_user.id)
+        await state.set_state(Reg.name)
+        await callback.message.edit_text('Напишите свое имя')
 
 
 # Ловит имя, переключает FSM на возраст
@@ -59,26 +64,14 @@ async def reg_five(message: Message, state: FSMContext):
         await message.answer('Не балуйся! Вес записывается цифрами. Повтори ввод.')
 
 
-# Ловит рост, переключает FSM на опыт тренировок
+# Ловит рост, закрывает FSM, записывает данные в БД
 @router.message(Reg.height)
 async def reg_six(message: Message, state: FSMContext):
     if message.text.isdigit():
         await state.update_data(height=message.text)
-        await state.set_state(Reg.duration_of_const_train)
-        await message.answer('Выберите опыт постоянных тренировок (перерывы между тренировками не более 2 месяцев)',
-                             reply_markup=duration_of_const_train_keyboard)
-    else:
-        await message.answer('Не балуйся! Рост записывается цифрами. Повтори ввод.')
-
-
-# Ловит опыт тренировок, закрывает FSM, записывает данные в БД
-@router.message(Reg.duration_of_const_train)
-async def reg_seven(message: Message, state: FSMContext):
-    if message.text in ['только начинаю', 'более 3 месяцев', 'более года', 'более 3 лет']:
-        await state.update_data(duration_of_const_train=message.text)
         data = await state.get_data()
         await state.clear()
         await ORMUser.reg_user(user_data=data)
-        await message.answer('Аккаунт успешно создан!')
+        await message.answer('Аккаунт успешно создан!', reply_markup=get_back_to_user_menu_keyboard)
     else:
-        await message.answer('Нужно выбрать значение на клавиатуре, иначе обновить информацию не получится.')
+        await message.answer('Не балуйся! Рост записывается цифрами. Повтори ввод.')

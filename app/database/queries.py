@@ -1,8 +1,6 @@
 import asyncio
-from datetime import datetime
-from typing import Tuple, Any
 
-from sqlalchemy import select, text, update
+from sqlalchemy import select, text, update, delete
 
 from app.database.database import Base, engine, session_factory
 from app.database.models import User, Purpose, Workout
@@ -26,7 +24,6 @@ class ORMUser:
                 sex=user_data['sex'],
                 weight=float(user_data['weight']),
                 height=int(user_data['height']),
-                duration_of_const_train=user_data['duration_of_const_train'],
             )
             session.add(user)
             await session.commit()
@@ -36,42 +33,59 @@ class ORMUser:
         async with session_factory() as session:
             query = select(User.tg_id).select_from(User)
             result = await session.execute(query)
-            if (user_tg_id, ) in result:
+            if (user_tg_id,) in result:
                 return True
             else:
                 return False
 
     @staticmethod
-    async def get_username(user_tg_id: int):
+    async def get_user_info(user_tg_id: int) -> User:
         async with session_factory() as session:
-            query = select(User.name).select_from(User).where(User.tg_id == user_tg_id)
+            query = select(User).where(User.tg_id == user_tg_id)
             result = await session.execute(query)
-            return result.first()[0]
+            return result.first()
 
     @staticmethod
     async def update_user(tg_id: int, user_data: dict) -> None:
         async with session_factory() as session:
-            query = update(User).where(User.tg_id == tg_id).values(
-                age=int(user_data['age']),
-                weight=float(user_data['weight']),
-                duration_of_const_train=user_data['duration_of_const_train']
-            )
-            await session.execute(query)
+            query = select(User).where(User.tg_id == tg_id)
+            result = await session.execute(query)
+            user = result.scalars().first()
+            param_for_updating = list(user_data.keys())
+            match param_for_updating[0]:
+                case 'age':
+                    user.age = list(user_data.values())[0]
+                case 'weight':
+                    user.weight = list(user_data.values())[0]
+            session.add(user)
             await session.commit()
 
 
 class ORMPurpose:
 
     @staticmethod
-    async def is_user_has_purpose(tg_id: int) -> tuple[bool, Any] | bool:
+    async def is_user_has_purpose(tg_id: int) -> bool:
         async with session_factory() as session:
-            query = select(Purpose.created_at).where(Purpose.user_id == tg_id)
+            query = select(Purpose).where(Purpose.user_id == tg_id)
             result = await session.execute(query)
-            purpose = result.first()
-            if purpose is not None:
-                return True, purpose
+            if result.first() is not None:
+                return True
             else:
                 return False
+
+    @staticmethod
+    async def get_purpose(tg_id: int) -> Purpose:
+        async with session_factory() as session:
+            query = select(Purpose).where(Purpose.user_id == tg_id)
+            result = await session.execute(query)
+            purpose = result.first()
+            return purpose
+
+    @staticmethod
+    async def delete_purpose(tg_id: int) -> None:
+        async with engine.begin() as conn:
+            query = delete(Purpose).where(Purpose.user_id == tg_id)
+            await conn.execute(query)
 
     @staticmethod
     async def create_purpose(tg_id: int) -> None:
@@ -109,6 +123,77 @@ class ORMPurpose:
                 case 'тяга нижнего блока':
                     purpose.seated_row = data['exercise_purpose']
             session.add(purpose)
+            await session.commit()
+
+    @staticmethod
+    async def save_purpose_desired_result(tg_id: int, data: dict) -> None:
+        async with session_factory() as session:
+            query = select(Purpose).where(Purpose.user_id == tg_id)
+            result = await session.execute(query)
+            purpose = result.scalars().first()
+            desired_result = data
+            match desired_result:
+                case '1':
+                    purpose.desired_result = 'похудение с поддержанием физ. формы'
+                case '2':
+                    purpose.desired_result = 'поддержание физ. формы'
+                case '3':
+                    purpose.desired_result = 'набор мышечной массы'
+            session.add(purpose)
+            await session.commit()
+
+
+class ORMWorkout:
+    @staticmethod
+    async def get_workout(workout_id: int) -> Workout:
+        async with session_factory() as session:
+            query = select(Workout).where(Workout.id == workout_id)
+            result = await session.execute(query)
+            workout = result.first()[0]
+            return workout
+
+    @staticmethod
+    async def get_all_workouts():
+        async with session_factory() as session:
+            query = select(Workout)
+            result = await session.execute(query)
+            workouts = result.all()
+            return workouts
+
+    @staticmethod
+    async def choose_next_workout() -> Workout.id:
+        async with session_factory() as session:
+            query = select(Workout.id).where(Workout.status == 'waiting') #Пока что не работает, нужно добавить поле в модель
+            result = await session.execute(query)
+            return result.scalars().first()
+
+    @staticmethod
+    async def save_workout_exercise(data: dict, workout_id: Workout.id) -> None:
+        async with session_factory() as session:
+            query = select(Workout).where(Workout.id == workout_id)
+            result = await session.execute(query)
+            workout = result.scalars().first()
+            exercise_name = data['exercise_name']
+            match exercise_name:
+                case 'становая тяга':
+                    workout.deadlift_actually = data['exercise_workout']
+                case 'приседания':
+                    workout.sqatting_actually = data['exercise_workout']
+                case 'жим лежа':
+                    workout.bench_press_actually = data['exercise_workout']
+                case 'сгибание рук со штангой':
+                    workout.barbell_curl_actually = data['exercise_workout']
+                case 'подтягивания':
+                    workout.pull_up_actually = data['exercise_workout']
+                case 'жим гантелей в наклоне':
+                    workout.dumbbell_inclene_bench_press_actually = data['exercise_workout']
+                case 'жим штанги стоя':
+                    workout.military_press_actually = data['exercise_workout']
+                case 'тяга верхнего блока':
+                    workout.lat_pull_down_actually = data['exercise_workout']
+                case 'тяга нижнего блока':
+                    workout.seated_row_actually = data['exercise_workout']
+            session.add(workout)
             await session.commit()
 
 

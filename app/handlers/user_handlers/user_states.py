@@ -8,11 +8,11 @@ class Reg(StatesGroup):
     sex = State()
     weight = State()
     height = State()
-    duration_of_const_train = State()
 
 
-class Update(StatesGroup):
+class UpdateAge(StatesGroup):
     age = State()
+
+
+class UpdateWeight(StatesGroup):
     weight = State()
-    height = State()
-    duration_of_const_train = State()

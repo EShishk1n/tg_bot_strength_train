@@ -1,11 +1,9 @@
-from aiogram import Router
-from aiogram.filters import CommandStart, Command
-from aiogram.types import Message
+from aiogram import Router, F
+from aiogram.filters import CommandStart
+from aiogram.types import Message, CallbackQuery
 
-from app.database.queries import ORMUser, ORMPurpose
+from app.database.queries import ORMUser
 from app.keyboards.main_keyboard import main_keyboard
-from app.keyboards.purpose_keyboard import exercise_keyboard
-
 
 router = Router(name='main_handlers')
 
@@ -14,17 +12,24 @@ router = Router(name='main_handlers')
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     if await ORMUser.is_user_registered(message.from_user.id):
-        name = await ORMUser.get_username(message.from_user.id)
-        await message.answer(f'С возвращением, {name}!\n'
-                             f'Для продолжения тренировок предлагаю проверить актуальность информации в блоке '
+        user_info = await ORMUser.get_user_info(message.from_user.id)
+        await message.answer(f'С возвращением, {user_info[0].name}!\n'
+                             f'Для продолжения тренировок предлагаю проверить актуальность информации в блоке'
                              f'"Пользователь" и "Цель тренировок"',
                              reply_markup=main_keyboard)
     else:
         await message.answer(
             f'Привет!\nЭто бот для контроля силовых тренировок.\n'
-            f'Для начала тренировок зарегистрируйся и поставь цель в блоках ниже',
+            f'Для начала тренировок зарегистрируйся в блоке "Пользователь"',
             reply_markup=main_keyboard)
 
+
+# ловит команду возвращения в основное меню
+@router.callback_query(F.data == 'get_back_to_main_menu')
+async def user(callback: CallbackQuery):
+    await callback.answer('')
+    await callback.message.edit_text('Вы перешли в Основное меню',
+                                     reply_markup=main_keyboard)
 
 # # Ловит команду /help
 # @router.message(Command('help'))

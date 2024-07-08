@@ -15,7 +15,6 @@ class User(Base):
     sex: Mapped[str]
     weight: Mapped[float] = mapped_column(Float)
     height: Mapped[int] = mapped_column(Integer)
-    duration_of_const_train: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
 
     def __repr__(self) -> str:
@@ -40,7 +39,9 @@ class Purpose(Base):
     military_press: Mapped[str] = mapped_column(nullable=True)
     lat_pull_down: Mapped[str] = mapped_column(nullable=True)
     seated_row: Mapped[str] = mapped_column(nullable=True)
-    reached_at: Mapped[datetime] = mapped_column(nullable=True)
+    date_reached_at_plan: Mapped[datetime.date] = mapped_column(nullable=True)
+    # desired_result: Mapped[str] = mapped_column(nullable=True)
+    # date_reached_at_actually: Mapped[datetime] = mapped_column(nullable=True)
 
     def __repr__(self):
         return f'цель поставлена {self.created_at} для {self.user_id}'
@@ -52,6 +53,7 @@ class Workout(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     number: Mapped[int]
     user_id: Mapped[int] = mapped_column(ForeignKey('users.tg_id', ondelete="CASCADE"))
+    # purpose: Mapped[int] = mapped_column(ForeignKey('purposes.id', ondelete="CASCADE")) - добавить потом
     created_at: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
     deadlift_plan: Mapped[str] = mapped_column(nullable=True)
     deadlift_actually: Mapped[str] = mapped_column(nullable=True)
@@ -74,6 +76,7 @@ class Workout(Base):
     reached_at_plan: Mapped[datetime] = mapped_column(nullable=True)
     reached_at_actually: Mapped[datetime] = mapped_column(nullable=True)
     completion: Mapped[int] = mapped_column(nullable=True)
+    # status: Mapped[str] = mapped_column(nullable=False, default='waiting')
     comment: Mapped[str] = mapped_column(nullable=True)
 
     def __repr__(self):

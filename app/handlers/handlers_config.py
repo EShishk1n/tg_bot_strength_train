@@ -10,7 +10,11 @@ def is_right_exercise_format(exercise: str) -> bool:
 
 
 def is_right_format(some_string: str) -> bool:
-    if some_string.isdigit() and len(some_string) <= 3:
-        return True
-    else:
+    try:
+        float(some_string)
+        if len(some_string) <= 4:
+            return True
+        else:
+            return False
+    except ValueError:
         return False
