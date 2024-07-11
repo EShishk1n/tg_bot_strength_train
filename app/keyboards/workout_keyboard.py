@@ -4,6 +4,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 workout_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Начать тренировку', callback_data='workout_start')],
     [InlineKeyboardButton(text='Информация о тренировках', callback_data='workout_info')],
+    [InlineKeyboardButton(text='Рассчитать программу тренировок', callback_data='calculate_workout_program')],
     [InlineKeyboardButton(text='Вернуться в главное меню', callback_data='get_back_to_main_menu')],
 ])
 
@@ -51,5 +52,10 @@ get_back_to_workout_info_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 get_back_to_workout_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Вернуться в меню "Тренировка"', callback_data='get_back_to_workout_menu')],
+])
+
+delete_previous_workout_program = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Продолжить', callback_data='delete_previous_workout')],
     [InlineKeyboardButton(text='Вернуться в меню "Тренировка"', callback_data='get_back_to_workout_menu')],
 ])

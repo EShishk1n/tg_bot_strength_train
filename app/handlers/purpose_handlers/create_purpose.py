@@ -4,8 +4,8 @@ from aiogram.types import Message, CallbackQuery
 
 from app.keyboards.purpose_keyboard import action_with_existing_purpose_keyboard
 from app.database.queries import ORMPurpose
-from app.handlers.handlers_config import is_right_exercise_format
-from app.handlers.purpose_handlers.purpose_states import PurposeExercise, DesiredResult
+from app.handlers.handlers_config import is_right_exercise_format, is_date_format
+from app.handlers.purpose_handlers.purpose_states import PurposeExercise, DesiredResult, DateReachedAtPlan
 
 from app.keyboards.purpose_keyboard import PurposeCallback, exercise_keyboard
 
@@ -72,10 +72,10 @@ async def desired_result(callback: CallbackQuery, state: FSMContext):
 async def desired_result_get(message: Message, state: FSMContext):
     if message.text in ('1', '2', '3'):
         await state.update_data(desired_result=message.text)
-        tg_id = message.from_user.id
+        user_id = message.from_user.id
         data = await state.get_data()
         await state.clear()
-        await ORMPurpose.save_purpose_desired_result(tg_id, data)
+        await ORMPurpose.save_purpose_desired_result(user_id, data)
         await message.answer(f'Желаемый результат {data} сохранен.\n'
                              f'Выберите следующее упражнение для задания цели из списка',
                              reply_markup=exercise_keyboard)
@@ -84,3 +84,28 @@ async def desired_result_get(message: Message, state: FSMContext):
                              '1 - похудение с поддержанием физ. формы;\n'
                              '2 - поддержание физ. формы;\n'
                              '3 - набор мышечной массы;\n')
+
+
+@router.callback_query(F.data == 'date_reached_at_plan')
+async def date_reached_at_plan(callback: CallbackQuery, state: FSMContext):
+    await callback.answer('')
+    await state.set_state(DateReachedAtPlan.date_reached_at_plan)
+    await callback.message.answer('Введите планируемую дату достижения цели\n'
+                                  'в формате ДД.ММ.ГГГГ')
+
+
+# Переключает FSM на date_reached_at_plan, записывает информацию в БД
+@router.message(DateReachedAtPlan.date_reached_at_plan)
+async def date_reached_at_plan_get(message: Message, state: FSMContext):
+    if is_date_format(message.text):
+        await state.update_data(date_reached_at_plan=message.text)
+        user_id = message.from_user.id
+        data = await state.get_data()
+        await state.clear()
+        await ORMPurpose.save_purpose_date_reached_at_plan(user_id, data)
+        await message.answer(f'Планируемая дата достижения цели {data["date_reached_at_plan"]} сохранена.\n'
+                             f'Выберите следующее упражнение для задания цели из списка',
+                             reply_markup=exercise_keyboard)
+    else:
+        await message.answer('Введите планируемую дату достижения цели\n'
+                             'в формате ДД.ММ.ГГГГ')

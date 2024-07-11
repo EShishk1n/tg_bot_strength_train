@@ -38,6 +38,7 @@ exercise_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='тяга нижнего блока', callback_data=PurposeCallback(
         purpose='purpose', exercise_name='тяга нижнего блока').pack())],
     [InlineKeyboardButton(text='желаемый результат', callback_data='desired_result')],
+    [InlineKeyboardButton(text='планируемая дата достижения цели', callback_data='date_reached_at_plan')],
     [InlineKeyboardButton(text='Вернуться в меню "Цель тренировок"', callback_data='get_back_to_purpose_menu')],
 ])
 

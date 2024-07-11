@@ -8,8 +8,12 @@ class Exercise:
         """Считает суммарный вес упражнения (вес*повторения*подходы)"""
         return self.weight * self.repetitions * self.sets
 
+    # def __repr__(self):
+    #     return str(f'{self.weight}, {self.repetitions}, {self.sets}')
+
 
 class PurposeExercise(Exercise):
     def __init__(self, exercise: str):
         super().__init__(exercise[:-2])
         self.frequency = int(exercise[-1:])
+

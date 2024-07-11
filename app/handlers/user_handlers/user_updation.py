@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from app.database.queries import ORMUser
-from app.handlers.user_handlers.user_states import UpdateAge, UpdateWeight, UpdateDurationOfConstTrain
+from app.handlers.user_handlers.user_states import UpdateAge, UpdateWeight
 from app.keyboards.user_keyboard import duration_of_const_train_keyboard, get_back_to_user_menu_keyboard, \
     params_for_updating_keyboard
 

@@ -1,9 +1,10 @@
 import asyncio
+from datetime import datetime
 
 from sqlalchemy import select, text, update, delete
 
 from app.database.database import Base, engine, session_factory
-from app.database.models import User, Purpose, Workout
+from app.database.models import User, Purpose, Workout, WorkingWeight
 
 
 class ORMUser:
@@ -74,9 +75,9 @@ class ORMPurpose:
                 return False
 
     @staticmethod
-    async def get_purpose(tg_id: int) -> Purpose:
+    async def get_purpose(user_id: int) -> Purpose:
         async with session_factory() as session:
-            query = select(Purpose).where(Purpose.user_id == tg_id)
+            query = select(Purpose).where(Purpose.user_id == user_id)
             result = await session.execute(query)
             purpose = result.first()
             return purpose
@@ -126,12 +127,12 @@ class ORMPurpose:
             await session.commit()
 
     @staticmethod
-    async def save_purpose_desired_result(tg_id: int, data: dict) -> None:
+    async def save_purpose_desired_result(user_id: int, data: dict) -> None:
         async with session_factory() as session:
-            query = select(Purpose).where(Purpose.user_id == tg_id)
+            query = select(Purpose).where(Purpose.user_id == user_id)
             result = await session.execute(query)
             purpose = result.scalars().first()
-            desired_result = data
+            desired_result = data['desired_result']
             match desired_result:
                 case '1':
                     purpose.desired_result = 'похудение с поддержанием физ. формы'
@@ -139,6 +140,16 @@ class ORMPurpose:
                     purpose.desired_result = 'поддержание физ. формы'
                 case '3':
                     purpose.desired_result = 'набор мышечной массы'
+            session.add(purpose)
+            await session.commit()
+
+    @staticmethod
+    async def save_purpose_date_reached_at_plan(user_id: int, data: dict) -> None:
+        async with session_factory() as session:
+            query = select(Purpose).where(Purpose.user_id == user_id)
+            result = await session.execute(query)
+            purpose = result.scalars().first()
+            purpose.date_reached_at_plan = datetime.strptime(data['date_reached_at_plan'], '%d.%m.%Y')
             session.add(purpose)
             await session.commit()
 
@@ -163,7 +174,7 @@ class ORMWorkout:
     @staticmethod
     async def choose_next_workout() -> Workout.id:
         async with session_factory() as session:
-            query = select(Workout.id).where(Workout.status == 'waiting') #Пока что не работает, нужно добавить поле в модель
+            query = select(Workout.id).where(Workout.status == 'waiting')
             result = await session.execute(query)
             return result.scalars().first()
 
@@ -194,6 +205,76 @@ class ORMWorkout:
                 case 'тяга нижнего блока':
                     workout.seated_row_actually = data['exercise_workout']
             session.add(workout)
+            await session.commit()
+
+    @staticmethod
+    async def is_user_has_unfinished_workout(user_id) -> bool:
+        async with session_factory() as session:
+            query = select(Workout).where(Workout.user_id == user_id, Workout.status == 'waiting')
+            result = await session.execute(query)
+            if result.first() is not None:
+                return True
+            else:
+                return False
+
+    @staticmethod
+    async def delete_unfinished_workout(user_id) -> None:
+        async with engine.begin() as conn:
+            query = delete(Workout).where(Workout.user_id == user_id, Workout.status == 'waiting')
+            await conn.execute(query)
+
+
+class ORMWorkingWeight:
+    @staticmethod
+    async def get_working_weight(user_id: int) -> WorkingWeight:
+        async with session_factory() as session:
+            query = select(WorkingWeight).where(WorkingWeight.user_id == user_id)
+            result = await session.execute(query)
+            working_weight = result.first()
+            return working_weight
+
+    @staticmethod
+    async def delete_working_weight(user_id: int) -> None:
+        async with engine.begin() as conn:
+            query = delete(WorkingWeight).where(WorkingWeight.user_id == user_id)
+            await conn.execute(query)
+
+    @staticmethod
+    async def create_working_weight(user_id: int) -> None:
+        async with session_factory() as session:
+            working_weight = WorkingWeight(
+                user_id=user_id
+            )
+            session.add(working_weight)
+            await session.commit()
+
+    @staticmethod
+    async def save_working_weight(user_id: int, data: dict) -> None:
+        async with session_factory() as session:
+            query = select(WorkingWeight).where(WorkingWeight.user_id == user_id)
+            result = await session.execute(query)
+            working_weight = result.scalars().first()
+            for exercise in data.items():
+                match exercise[0]:
+                    case 'становая тяга':
+                        working_weight.deadlift = exercise[1]
+                    case 'приседания':
+                        working_weight.sqatting = exercise[1]
+                    case 'жим лежа':
+                        working_weight.bench_press = exercise[1]
+                    case 'сгибание рук со штангой':
+                        working_weight.barbell_curl = exercise[1]
+                    case 'подтягивания':
+                        working_weight.pull_up = exercise[1]
+                    case 'жим гантелей в наклоне':
+                        working_weight.dumbbell_inclene_bench_press = exercise[1]
+                    case 'жим штанги стоя':
+                        working_weight.military_press = exercise[1]
+                    case 'тяга верхнего блока':
+                        working_weight.lat_pull_down = exercise[1]
+                    case 'тяга нижнего блока':
+                        working_weight.seated_row = exercise[1]
+            session.add(working_weight)
             await session.commit()
 
 

@@ -8,3 +8,7 @@ class PurposeExercise(StatesGroup):
 
 class DesiredResult(StatesGroup):
     desired_result = State()
+
+
+class DateReachedAtPlan(StatesGroup):
+    date_reached_at_plan = State()
