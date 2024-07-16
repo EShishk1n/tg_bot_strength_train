@@ -1,10 +1,10 @@
 import datetime
 import random
 
-from app.services.define_list_of_exercise_weight import main
-from app.services.define_list_of_weight_repetitions_sets import define_list_of_weight, define_list_of_repetitions, \
+from app.services.calculate_workout_program.define_list_of_exercise_weight import main
+from app.services.calculate_workout_program.define_list_of_weight_repetitions_sets import define_list_of_weight, define_list_of_repetitions, \
     define_list_of_sets
-from app.services.exercise_class import Exercise, PurposeExercise
+from app.services.calculate_workout_program.exercise_class import Exercise, PurposeExercise
 
 
 class WorkoutProgramCalculation:

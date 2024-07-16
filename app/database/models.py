@@ -64,6 +64,11 @@ class Purpose(Base):
         return f'цель поставлена {self.created_at} для {self.user_id}'
 
 
+# class WorkoutBase(Base):
+#     user_id: Mapped[int] = mapped_column(ForeignKey('users.tg_id', ondelete="CASCADE"))
+#     plan: Mapped[str] = mapped_column(nullable=True)
+#     fact: Mapped[str] = mapped_column(nullable=True)
+
 class Workout(Base):
     __tablename__ = 'workouts'
 

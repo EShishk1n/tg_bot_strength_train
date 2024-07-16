@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from app.services.exercise_class import Exercise, PurposeExercise
+from app.services.calculate_workout_program.exercise_class import Exercise, PurposeExercise
 
 
 def main(current_exercise: Exercise, purpose_exercise: PurposeExercise, date_reached_at_plan: datetime.date):
