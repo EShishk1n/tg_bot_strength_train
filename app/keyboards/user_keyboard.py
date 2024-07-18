@@ -32,7 +32,6 @@ duration_of_const_train_keyboard = ReplyKeyboardMarkup(keyboard=[
 params_for_updating_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Возраст', callback_data='update_age')],
     [InlineKeyboardButton(text='Вес', callback_data='update_weight')],
-    [InlineKeyboardButton(text='Опыт тренировок', callback_data='update_duration_of_const_train')],
     [InlineKeyboardButton(text='Вернуться в меню пользователя', callback_data='get_back_to_user_menu')],
 ])
 

@@ -1,4 +1,5 @@
 from aiogram import Router, F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 
 from app.database.queries import ORMPurpose
@@ -20,5 +21,9 @@ async def workout(callback: CallbackQuery):
 
 @router.callback_query(F.data == 'get_back_to_workout_menu')
 async def get_back_to_workout_menu(callback: CallbackQuery):
-    await callback.message.edit_text('Вы перешли в блок "Тренировка"\n'
-                                     'Выберите пункт:', reply_markup=workout_keyboard)
+    try:
+        await callback.message.edit_text('Вы перешли в блок "Тренировка"\n'
+                                         'Выберите пункт:', reply_markup=workout_keyboard)
+    except TelegramBadRequest:
+        await callback.message.answer('Вы перешли в блок "Тренировка"\n'
+                                      'Выберите пункт:', reply_markup=workout_keyboard)

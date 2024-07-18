@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery
 
 from app.keyboards.purpose_keyboard import action_with_existing_purpose_keyboard
 from app.database.queries import ORMPurpose
-from app.handlers.handlers_config import is_right_exercise_format, is_date_format
+from app.handlers.handlers_config import is_right_exercise_format, is_date_format, is_right_purpose_exercise_format
 from app.handlers.purpose_handlers.purpose_states import PurposeExercise, DesiredResult, DateReachedAtPlan
 
 from app.keyboards.purpose_keyboard import PurposeCallback, exercise_keyboard
@@ -43,7 +43,7 @@ async def exercise(callback: CallbackQuery, callback_data: PurposeCallback, stat
 # Переключает FSM на exercise_purpose, записывает информацию в БД
 @router.message(PurposeExercise.exercise_purpose)
 async def exercise_get(message: Message, state: FSMContext):
-    if is_right_exercise_format(message.text):
+    if is_right_purpose_exercise_format(message.text):
         await state.update_data(exercise_purpose=message.text)
         tg_id = message.from_user.id
         data = await state.get_data()

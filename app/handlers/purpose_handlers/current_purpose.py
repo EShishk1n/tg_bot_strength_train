@@ -14,16 +14,15 @@ async def current_purpose(callback: CallbackQuery):
         current_purpose_query = await ORMPurpose.get_purpose(callback.from_user.id)
         current_purpose_data = current_purpose_query[0]
         current_purpose_exercises = {'становая тяга': current_purpose_data.deadlift,
-                                     'приседания': current_purpose_data.sqatting,
+                                     'приседания': current_purpose_data.squatting,
                                      'жим лежа': current_purpose_data.bench_press,
-                                     'сгибание рук со штангой': current_purpose_data.barbell_curl,
+                                     'сгибание рук со штангой': current_purpose_data.standing_barbell_curl,
                                      'подтягивания': current_purpose_data.pull_up,
                                      'жим гантелей на наклонной скамье':
-                                         current_purpose_data.dumbbell_inclene_bench_press,
+                                         current_purpose_data.dumbbell_incline_bench_press,
                                      'жим штанги стоя': current_purpose_data.military_press,
                                      'тяга верхнего блока': current_purpose_data.lat_pull_down,
                                      'тяга нижнего блока': current_purpose_data.seated_row}
-        complition_percentage = 0
         exercises_to_output = ''
         for key, value in current_purpose_exercises.items():
             if value:
@@ -31,8 +30,7 @@ async def current_purpose(callback: CallbackQuery):
 
         await callback.message.edit_text(
             f'Текущая цель от {current_purpose_data.created_at.date().strftime("%d.%m.%Y")}:\n'
-            f'{exercises_to_output}'
-            f'Цель выполнена на {complition_percentage} процентов',
+            f'{exercises_to_output}',
             reply_markup=action_with_existing_purpose_keyboard)
     else:
         await callback.message.edit_text(f'Цель не задана.\n'

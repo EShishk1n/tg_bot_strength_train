@@ -16,7 +16,6 @@ async def user_info_(callback: CallbackQuery):
                                          f' - возраст: {user_info[0].age}\n'
                                          f' - вес: {user_info[0].weight}\n'
                                          f' - рост: {user_info[0].height}\n'
-                                         f' - продолжительность тренировок: {user_info[0].duration_of_const_train}\n'
                                          f' - аккаунт создан: {user_info[0].created_at.date().strftime("%d.%m.%Y")}',
                                          reply_markup=get_back_to_user_menu_keyboard)
     else:

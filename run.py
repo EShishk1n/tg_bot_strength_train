@@ -10,8 +10,7 @@ from app.handlers.user_handlers import user, user_info, user_registration, user_
 from app.handlers.user_handlers.working_weight import create_update_working_weight, working_weight
 from app.handlers.workout_handlers import workout, calculate_workout_program
 from app.handlers.workout_handlers import workout_start
-from app.handlers.workout_handlers.workout_info import workout_info, two_workouts_info
-from app.handlers.workout_handlers.workout_info import all_workouts_info
+from app.handlers.workout_handlers.workout_info import workout_info
 
 from config import TOKEN
 
@@ -25,8 +24,7 @@ async def main():
                        create_update_working_weight.router, working_weight.router)
     dp.include_routers(purpose.router, current_purpose.router, create_purpose.router, delete_purpose.router,
                        update_purpose.router)
-    dp.include_routers(workout.router, workout_start.router, workout_info.router, two_workouts_info.router,
-                       all_workouts_info.router, calculate_workout_program.router)
+    dp.include_routers(workout.router, workout_start.router, workout_info.router, calculate_workout_program.router)
     await dp.start_polling(bot)
 
 

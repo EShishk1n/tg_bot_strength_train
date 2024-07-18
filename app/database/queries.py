@@ -4,7 +4,22 @@ from datetime import datetime
 from sqlalchemy import select, text, update, delete
 
 from app.database.database import Base, engine, session_factory
-from app.database.models import User, Purpose, Workout, WorkingWeight
+from app.database.models import User, Purpose, WorkingWeight, Deadlift, Squatting, BenchPress, StandingBarbellCurl, \
+    PullUp, DumbbellInclineBenchPress, MilitaryPress, SeatedRow, LatPullDown
+from app.handlers.handlers_config import exercise_dict
+from app.services.calculate_workout_program.get_exercises_without_purpose import get_exercises_with_purpose
+
+workout_dict = {
+    'deadlift': Deadlift,
+    'squatting': Squatting,
+    'bench_press': BenchPress,
+    'standing_barbell_curl': StandingBarbellCurl,
+    'pull_up': PullUp,
+    'dumbbell_incline_bench_press': DumbbellInclineBenchPress,
+    'military_press': MilitaryPress,
+    'lat_pull_down': LatPullDown,
+    'seated_row': SeatedRow,
+}
 
 
 class ORMUser:
@@ -13,7 +28,7 @@ class ORMUser:
     async def create_tables():
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
-            # await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(Base.metadata.create_all)
 
     @staticmethod
     async def reg_user(user_data):
@@ -108,7 +123,7 @@ class ORMPurpose:
                 case 'становая тяга':
                     purpose.deadlift = data['exercise_purpose']
                 case 'приседания':
-                    purpose.sqatting = data['exercise_purpose']
+                    purpose.squatting = data['exercise_purpose']
                 case 'жим лежа':
                     purpose.bench_press = data['exercise_purpose']
                 case 'сгибание рук со штангой':
@@ -156,72 +171,91 @@ class ORMPurpose:
 
 class ORMWorkout:
     @staticmethod
-    async def get_workout(workout_id: int) -> Workout:
+    async def insert_workout_program(user_id: int, exercise: str, workout_program: list) -> None:
+        w_o_list = []
+        for workout in workout_program:
+            w_o = workout_dict[exercise](user_id=user_id, plan=workout)
+            w_o_list.append(w_o)
+
         async with session_factory() as session:
-            query = select(Workout).where(Workout.id == workout_id)
-            result = await session.execute(query)
-            workout = result.first()[0]
-            return workout
+            session.add_all(w_o_list)
+            await session.commit()
 
     @staticmethod
-    async def get_all_workouts():
+    async def get_all_exercise_info(user_id: int, exercise: str):
         async with session_factory() as session:
-            query = select(Workout)
+            query = select(workout_dict[exercise]).where(workout_dict[exercise].user_id == user_id)
             result = await session.execute(query)
-            workouts = result.all()
+            workouts = result.scalars().all()
             return workouts
 
     @staticmethod
-    async def choose_next_workout() -> Workout.id:
+    async def make_workout(user_id: int) -> dict:
+        purpose = await ORMPurpose.get_purpose(user_id)
+        exercises_with_purpose = get_exercises_with_purpose(purpose)
+        workout = {}
         async with session_factory() as session:
-            query = select(Workout.id).where(Workout.status == 'waiting')
-            result = await session.execute(query)
-            return result.scalars().first()
+            for exercise in exercises_with_purpose:
+                query = select(workout_dict[exercise]).where(workout_dict[exercise].user_id == user_id,
+                                                             workout_dict[exercise].fact == '')
+                result = await session.execute(query)
+                exercise_workout = result.scalars().first()
+                workout[exercise] = exercise_workout
+        return workout
 
     @staticmethod
-    async def save_workout_exercise(data: dict, workout_id: Workout.id) -> None:
+    async def save_workout_exercise(data: dict, user_id: int) -> None:
         async with session_factory() as session:
-            query = select(Workout).where(Workout.id == workout_id)
+            exercise = exercise_dict[data['exercise_name']]
+            query = select(workout_dict[exercise]).where(workout_dict[exercise].user_id == user_id,
+                                                         workout_dict[exercise].fact == '')
             result = await session.execute(query)
+
             workout = result.scalars().first()
-            exercise_name = data['exercise_name']
-            match exercise_name:
-                case 'становая тяга':
-                    workout.deadlift_actually = data['exercise_workout']
-                case 'приседания':
-                    workout.sqatting_actually = data['exercise_workout']
-                case 'жим лежа':
-                    workout.bench_press_actually = data['exercise_workout']
-                case 'сгибание рук со штангой':
-                    workout.barbell_curl_actually = data['exercise_workout']
-                case 'подтягивания':
-                    workout.pull_up_actually = data['exercise_workout']
-                case 'жим гантелей в наклоне':
-                    workout.dumbbell_inclene_bench_press_actually = data['exercise_workout']
-                case 'жим штанги стоя':
-                    workout.military_press_actually = data['exercise_workout']
-                case 'тяга верхнего блока':
-                    workout.lat_pull_down_actually = data['exercise_workout']
-                case 'тяга нижнего блока':
-                    workout.seated_row_actually = data['exercise_workout']
+            workout.fact = data['exercise_workout']
             session.add(workout)
             await session.commit()
 
     @staticmethod
-    async def is_user_has_unfinished_workout(user_id) -> bool:
+    async def get_last_workout(user_id: int) -> dict:
+        purpose = await ORMPurpose.get_purpose(user_id)
+        exercises_with_purpose = get_exercises_with_purpose(purpose)
+        last_workout = {}
         async with session_factory() as session:
-            query = select(Workout).where(Workout.user_id == user_id, Workout.status == 'waiting')
-            result = await session.execute(query)
-            if result.first() is not None:
-                return True
-            else:
-                return False
+            for exercise in exercises_with_purpose:
+                query = select(workout_dict[exercise]).order_by(workout_dict[exercise].id.desc()).where(
+                    workout_dict[exercise].user_id == user_id).filter(workout_dict[exercise].fact != '')
+                result = await session.execute(query)
+                exercise_workout = result.scalars().first()
+                last_workout[exercise] = exercise_workout
+        print(last_workout)
+        return last_workout
 
     @staticmethod
-    async def delete_unfinished_workout(user_id) -> None:
+    async def has_unfinished_workout(user_id: int) -> bool:
+        purpose = await ORMPurpose.get_purpose(user_id)
+        exercises_with_purpose = get_exercises_with_purpose(purpose)
+        async with session_factory() as session:
+            for exercise in exercises_with_purpose:
+                query = select(workout_dict[exercise]).where(workout_dict[exercise].user_id == user_id,
+                                                             workout_dict[exercise].fact == '')
+                result = await session.execute(query)
+                workout_exercise = result.scalars().all()
+                if not workout_exercise:
+                    continue
+                else:
+                    return True
+            return False
+
+    @staticmethod
+    async def delete_unfinished_workout(user_id: int):
+        purpose = await ORMPurpose.get_purpose(user_id)
+        exercises_with_purpose = get_exercises_with_purpose(purpose)
         async with engine.begin() as conn:
-            query = delete(Workout).where(Workout.user_id == user_id, Workout.status == 'waiting')
-            await conn.execute(query)
+            for exercise in exercises_with_purpose:
+                query = delete(workout_dict[exercise]).where(workout_dict[exercise].user_id == user_id,
+                                                             workout_dict[exercise].fact == '')
+                await conn.execute(query)
 
 
 class ORMWorkingWeight:
@@ -259,7 +293,7 @@ class ORMWorkingWeight:
                     case 'становая тяга':
                         working_weight.deadlift = exercise[1]
                     case 'приседания':
-                        working_weight.sqatting = exercise[1]
+                        working_weight.squatting = exercise[1]
                     case 'жим лежа':
                         working_weight.bench_press = exercise[1]
                     case 'сгибание рук со штангой':
@@ -280,6 +314,7 @@ class ORMWorkingWeight:
 
 async def main():
     await ORMUser.create_tables()
+    # print(await ORMWorkout.get_all_exercise_info(1488, 'deadlift'))
 
 
 if __name__ == "__main__":

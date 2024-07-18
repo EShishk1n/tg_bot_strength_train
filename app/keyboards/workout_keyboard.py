@@ -37,20 +37,6 @@ workout_exercise_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Вернуться в меню "Тренировка"', callback_data='get_back_to_workout_menu')],
 ])
 
-workout_info_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Информация о предыдущей тренировке',
-                          callback_data='previous_workout_info')],
-    [InlineKeyboardButton(text='Информация о следующей тренировке',
-                          callback_data='next_workout_info')],
-    [InlineKeyboardButton(text='Информация о всех тренировках',
-                          callback_data='all_workouts_info')],
-    [InlineKeyboardButton(text='Назад', callback_data='get_back_to_workout_info_menu')],
-])
-
-get_back_to_workout_info_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Назад', callback_data='get_back_to_workout_info_menu')],
-])
-
 get_back_to_workout_menu_keyboard = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Вернуться в меню "Тренировка"', callback_data='get_back_to_workout_menu')],
 ])
